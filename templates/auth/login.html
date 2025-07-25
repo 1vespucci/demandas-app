@@ -1,0 +1,150 @@
+{% extends "base.html" %} {% block title %}Login - Gerenciador de Demandas{%
+endblock %} {% block content %}
+<div
+  class="container-fluid vh-100 d-flex align-items-center justify-content-center"
+>
+  <div class="row w-100">
+    <div class="col-md-6 offset-md-3 col-lg-4 offset-lg-4">
+      <div class="card shadow-lg border-0">
+        <div class="card-body p-5">
+          <div class="text-center mb-4">
+            <i class="bi bi-kanban display-4 text-primary"></i>
+            <h2 class="fw-bold mt-3">Demandas Pro</h2>
+            <p class="text-muted">Faça login para continuar</p>
+          </div>
+
+          <form method="POST">
+            <div class="mb-3">
+              <label for="username" class="form-label">Usuário ou Email</label>
+              <div class="input-group">
+                <span class="input-group-text">
+                  <i class="bi bi-person"></i>
+                </span>
+                <input
+                  type="text"
+                  class="form-control"
+                  id="username"
+                  name="username"
+                  placeholder="Digite seu usuário ou email"
+                  required
+                />
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label for="password" class="form-label">Senha</label>
+              <div class="input-group">
+                <span class="input-group-text">
+                  <i class="bi bi-lock"></i>
+                </span>
+                <input
+                  type="password"
+                  class="form-control"
+                  id="password"
+                  name="password"
+                  placeholder="Digite sua senha"
+                  required
+                />
+                <button
+                  class="btn btn-outline-secondary"
+                  type="button"
+                  id="togglePassword"
+                >
+                  <i class="bi bi-eye"></i>
+                </button>
+              </div>
+            </div>
+
+            <div class="mb-3 form-check">
+              <input
+                type="checkbox"
+                class="form-check-input"
+                id="remember"
+                name="remember"
+              />
+              <label class="form-check-label" for="remember">
+                Lembrar de mim
+              </label>
+            </div>
+
+            <button type="submit" class="btn btn-primary w-100 mb-3">
+              <i class="bi bi-box-arrow-in-right me-2"></i>
+              Entrar
+            </button>
+          </form>
+
+          <div class="text-center">
+            <p class="mb-2">
+              <a href="#" class="text-decoration-none">Esqueceu sua senha?</a>
+            </p>
+            <p class="text-muted">
+              Não tem uma conta?
+              <a
+                href="{{ url_for('auth.register') }}"
+                class="text-decoration-none"
+                >Registre-se</a
+              >
+            </p>
+          </div>
+
+          <hr class="my-4" />
+
+          <div class="text-center">
+            <small class="text-muted">
+              <i class="bi bi-shield-check me-1"></i>
+              Acesso seguro e protegido
+            </small>
+          </div>
+        </div>
+      </div>
+
+      <!-- Demo credentials card -->
+      <div class="card mt-3 border-warning">
+        <div class="card-body">
+          <h6 class="card-title text-warning">
+            <i class="bi bi-info-circle me-2"></i>
+            Credenciais de Demonstração
+          </h6>
+          <p class="card-text small mb-2">
+            <strong>Admin:</strong> admin / admin123<br />
+            <small class="text-muted">Acesso completo ao sistema</small>
+          </p>
+          <button
+            class="btn btn-sm btn-outline-warning"
+            onclick="fillDemoCredentials()"
+          >
+            Usar credenciais de demo
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %} {% block extra_js %}
+<script>
+  // Toggle password visibility
+  document
+    .getElementById("togglePassword")
+    .addEventListener("click", function () {
+      const password = document.getElementById("password");
+      const icon = this.querySelector("i");
+
+      if (password.type === "password") {
+        password.type = "text";
+        icon.className = "bi bi-eye-slash";
+      } else {
+        password.type = "password";
+        icon.className = "bi bi-eye";
+      }
+    });
+
+  // Fill demo credentials
+  function fillDemoCredentials() {
+    document.getElementById("username").value = "admin";
+    document.getElementById("password").value = "admin123";
+  }
+
+  // Auto-focus username field
+  document.getElementById("username").focus();
+</script>
+{% endblock %}

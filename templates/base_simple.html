@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-bs-theme="auto">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{% block title %}Gerenciador de Demandas{% endblock %}</title>
+
+    <!-- Bootstrap CSS -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <!-- Bootstrap Icons -->
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css"
+    />
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Sortable.js para drag & drop -->
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+
+    <style>
+      :root {
+        --primary-color: #6366f1;
+        --secondary-color: #8b5cf6;
+        --success-color: #10b981;
+        --warning-color: #f59e0b;
+        --danger-color: #ef4444;
+        --info-color: #3b82f6;
+        --dark-color: #1f2937;
+        --light-color: #f8fafc;
+      }
+
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        line-height: 1.6;
+      }
+
+      .navbar-brand {
+        color: var(--primary-color) !important;
+      }
+
+      .btn-primary {
+        background-color: var(--primary-color);
+        border-color: var(--primary-color);
+      }
+
+      .btn-primary:hover {
+        background-color: #4f46e5;
+        border-color: #4f46e5;
+      }
+
+      .priority-critico {
+        color: var(--danger-color);
+        background: rgba(239, 68, 68, 0.1);
+        border: 1px solid rgba(239, 68, 68, 0.3);
+      }
+      .priority-alta {
+        color: var(--warning-color);
+        background: rgba(245, 158, 11, 0.1);
+        border: 1px solid rgba(245, 158, 11, 0.3);
+      }
+      .priority-media {
+        color: var(--info-color);
+        background: rgba(59, 130, 246, 0.1);
+        border: 1px solid rgba(59, 130, 246, 0.3);
+      }
+      .priority-baixa {
+        color: var(--success-color);
+        background: rgba(16, 185, 129, 0.1);
+        border: 1px solid rgba(16, 185, 129, 0.3);
+      }
+
+      .status-pendente {
+        color: #6c757d;
+      }
+      .status-andamento {
+        color: var(--warning-color);
+      }
+      .status-concluido {
+        color: var(--success-color);
+      }
+      .status-cancelado {
+        color: var(--danger-color);
+      }
+
+      .task-card {
+        border-left: 4px solid;
+        transition: all 0.3s ease;
+      }
+
+      .task-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      }
+
+      .kanban-column {
+        min-height: 400px;
+        background: #f8f9fa;
+        border-radius: 0.5rem;
+        padding: 1rem;
+      }
+
+      .kanban-card {
+        cursor: grab;
+        transition: all 0.3s ease;
+      }
+
+      .kanban-card:hover {
+        transform: scale(1.02);
+      }
+
+      .kanban-card.sortable-ghost {
+        opacity: 0.4;
+      }
+
+      .progress-bar {
+        transition: width 0.3s ease;
+      }
+
+      .toast {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 1055;
+      }
+
+      .sidebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        height: 100vh;
+        width: 250px;
+        background: linear-gradient(
+          135deg,
+          var(--primary-color),
+          var(--secondary-color)
+        );
+        z-index: 1000;
+        overflow-y: auto;
+        padding-top: 80px; /* Espaço para o navbar */
+      }
+
+      .main-content {
+        margin-left: 250px;
+        padding-top: 80px; /* Espaço para o navbar */
+        min-height: 100vh;
+      }
+
+      .sidebar .nav-link {
+        color: rgba(255, 255, 255, 0.8);
+        border-radius: 0.5rem;
+        margin-bottom: 0.5rem;
+      }
+
+      .sidebar .nav-link:hover,
+      .sidebar .nav-link.active {
+        color: white;
+        background: rgba(255, 255, 255, 0.1);
+      }
+
+      .stats-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+      }
+
+      .stats-card .card-body {
+        position: relative;
+        overflow: hidden;
+      }
+
+      .stats-card .card-body::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 100px;
+        height: 100px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 50%;
+        transform: translate(30px, -30px);
+      }
+
+      .search-input {
+        border-radius: 2rem;
+        padding-left: 2.5rem;
+      }
+
+      .search-icon {
+        position: absolute;
+        left: 0.75rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #6c757d;
+      }
+
+      /* Dark mode adjustments */
+      [data-bs-theme="dark"] .kanban-column {
+        background: #2d3748;
+      }
+
+      [data-bs-theme="dark"] .task-card {
+        background: #374151;
+        border-color: #4b5563;
+      }
+
+      /* Responsividade */
+      @media (max-width: 768px) {
+        .sidebar {
+          left: -250px;
+          transition: left 0.3s ease;
+        }
+
+        .sidebar.show {
+          left: 0;
+        }
+
+        .main-content {
+          margin-left: 0;
+          padding-top: 80px;
+        }
+
+        .sidebar-overlay {
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          background: rgba(0, 0, 0, 0.5);
+          z-index: 999;
+          display: none;
+        }
+
+        .sidebar-overlay.show {
+          display: block;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <!-- Navbar -->
+    <nav
+      class="navbar navbar-expand-lg navbar-light bg-white shadow-sm fixed-top"
+    >
+      <div class="container-fluid">
+        <!-- Sidebar toggle para mobile -->
+        <button
+          class="btn btn-outline-primary d-lg-none me-2"
+          type="button"
+          id="sidebarToggle"
+        >
+          <i class="bi bi-list"></i>
+        </button>
+
+        <!-- Brand -->
+        <a class="navbar-brand fw-bold" href="{{ url_for('dashboard') }}">
+          <i class="bi bi-clipboard-check me-2"></i>
+          Gerenciador de Demandas
+        </a>
+
+        <!-- Search bar -->
+        <div
+          class="mx-auto d-none d-md-flex position-relative"
+          style="max-width: 400px; width: 100%"
+        >
+          <i class="bi bi-search search-icon"></i>
+          <input
+            type="text"
+            class="form-control search-input"
+            placeholder="Buscar tarefas..."
+            id="globalSearch"
+          />
+        </div>
+
+        <!-- Theme toggle -->
+        <div class="navbar-nav ms-auto">
+          <button
+            class="btn btn-outline-secondary"
+            id="themeToggle"
+            title="Alternar tema"
+          >
+            <i class="bi bi-sun-fill" id="themeIcon"></i>
+          </button>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Sidebar -->
+    <div class="sidebar" id="sidebar">
+      <div class="d-flex align-items-center mb-4 px-3">
+        <div
+          class="rounded-circle bg-white d-flex align-items-center justify-content-center me-3"
+          style="width: 40px; height: 40px"
+        >
+          <i class="bi bi-person-fill text-primary"></i>
+        </div>
+        <div class="text-white">
+          <div class="fw-bold">Usuário</div>
+          <small class="opacity-75">Gerenciador Pessoal</small>
+        </div>
+      </div>
+
+      <nav class="nav flex-column px-3">
+        <a class="nav-link" href="{{ url_for('dashboard') }}">
+          <i class="bi bi-speedometer2 me-2"></i>
+          Dashboard
+        </a>
+        <a class="nav-link" href="{{ url_for('new_task') }}">
+          <i class="bi bi-plus-circle me-2"></i>
+          Nova Tarefa
+        </a>
+        <a
+          class="nav-link"
+          href="{{ url_for('dashboard', status='pendente') }}"
+        >
+          <i class="bi bi-clock me-2"></i>
+          Pendentes
+        </a>
+        <a
+          class="nav-link"
+          href="{{ url_for('dashboard', status='andamento') }}"
+        >
+          <i class="bi bi-play-circle me-2"></i>
+          Em Andamento
+        </a>
+        <a
+          class="nav-link"
+          href="{{ url_for('dashboard', status='concluido') }}"
+        >
+          <i class="bi bi-check-circle me-2"></i>
+          Concluídas
+        </a>
+      </nav>
+    </div>
+
+    <!-- Overlay para mobile -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <!-- Conteúdo principal -->
+    <div class="main-content">
+      <main class="container-fluid p-4">
+        <!-- Flash messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %} {% if
+        messages %}
+        <div class="alert-container mb-3">
+          {% for category, message in messages %}
+          <div
+            class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show"
+            role="alert"
+          >
+            {{ message }}
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="alert"
+            ></button>
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %} {% endwith %}
+
+        <!-- Conteúdo da página -->
+        {% block content %}{% endblock %}
+      </main>
+    </div>
+
+    <!-- Toast container -->
+    <div
+      class="toast-container position-fixed top-0 end-0 p-3"
+      id="toastContainer"
+    ></div>
+
+    <!-- Theme toggle button (floating) -->
+    <button
+      class="btn btn-primary position-fixed bottom-0 end-0 m-3 rounded-circle d-none d-lg-block"
+      id="floatingThemeToggle"
+      title="Alternar tema"
+      style="width: 50px; height: 50px; z-index: 1000"
+    >
+      <i class="bi bi-palette"></i>
+    </button>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Scripts personalizados -->
+    <script>
+      // Theme management
+      const themeToggle = document.getElementById("themeToggle");
+      const floatingThemeToggle = document.getElementById(
+        "floatingThemeToggle"
+      );
+      const themeIcon = document.getElementById("themeIcon");
+
+      // Verificar tema salvo ou preferência do sistema
+      const savedTheme = localStorage.getItem("theme");
+      const systemTheme = window.matchMedia("(prefers-color-scheme: dark)")
+        .matches
+        ? "dark"
+        : "light";
+      const currentTheme = savedTheme || systemTheme;
+
+      document.documentElement.setAttribute("data-bs-theme", currentTheme);
+      updateThemeIcon(currentTheme);
+
+      function updateThemeIcon(theme) {
+        if (theme === "dark") {
+          themeIcon.className = "bi bi-moon-fill";
+        } else {
+          themeIcon.className = "bi bi-sun-fill";
+        }
+      }
+
+      function toggleTheme() {
+        const current = document.documentElement.getAttribute("data-bs-theme");
+        const newTheme = current === "dark" ? "light" : "dark";
+
+        document.documentElement.setAttribute("data-bs-theme", newTheme);
+        localStorage.setItem("theme", newTheme);
+        updateThemeIcon(newTheme);
+      }
+
+      themeToggle?.addEventListener("click", toggleTheme);
+      floatingThemeToggle?.addEventListener("click", toggleTheme);
+
+      // Sidebar toggle para mobile
+      const sidebarToggle = document.getElementById("sidebarToggle");
+      const sidebar = document.getElementById("sidebar");
+      const sidebarOverlay = document.getElementById("sidebarOverlay");
+
+      function toggleSidebar() {
+        sidebar.classList.toggle("show");
+        sidebarOverlay.classList.toggle("show");
+      }
+
+      sidebarToggle?.addEventListener("click", toggleSidebar);
+      sidebarOverlay?.addEventListener("click", toggleSidebar);
+
+      // Global search
+      const globalSearch = document.getElementById("globalSearch");
+
+      globalSearch?.addEventListener("input", function (e) {
+        const query = e.target.value;
+        if (query.length >= 2) {
+          // Implementar busca em tempo real
+          fetch(`/api/search?q=${encodeURIComponent(query)}`)
+            .then((response) => response.json())
+            .then((results) => {
+              // Mostrar resultados em dropdown
+              console.log("Resultados:", results);
+            });
+        }
+      });
+
+      // Função utilitária para mostrar toasts
+      function showToast(message, type = "info") {
+        const toastContainer = document.getElementById("toastContainer");
+        const toastId = "toast-" + Date.now();
+
+        const toastHTML = `
+                <div class="toast" id="${toastId}" role="alert" aria-live="assertive" aria-atomic="true">
+                    <div class="toast-header">
+                        <i class="bi bi-${
+                          type === "success"
+                            ? "check-circle"
+                            : type === "error"
+                            ? "exclamation-triangle"
+                            : "info-circle"
+                        } me-2 text-${type === "error" ? "danger" : type}"></i>
+                        <strong class="me-auto">Notificação</strong>
+                        <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+                    </div>
+                    <div class="toast-body">
+                        ${message}
+                    </div>
+                </div>
+            `;
+
+        toastContainer.insertAdjacentHTML("beforeend", toastHTML);
+
+        const toastElement = document.getElementById(toastId);
+        const toast = new bootstrap.Toast(toastElement);
+        toast.show();
+
+        // Remove toast após ser escondido
+        toastElement.addEventListener("hidden.bs.toast", function () {
+          toastElement.remove();
+        });
+      }
+
+      // Função para atualizar stats em tempo real
+      function updateStats() {
+        fetch("/api/stats")
+          .then((response) => response.json())
+          .then((data) => {
+            // Atualizar elementos com stats
+            document.querySelectorAll("[data-stat]").forEach((element) => {
+              const statType = element.getAttribute("data-stat");
+              if (data[statType] !== undefined) {
+                element.textContent = data[statType];
+              }
+            });
+          })
+          .catch((error) => console.error("Erro ao atualizar stats:", error));
+      }
+
+      // Atualizar stats a cada 30 segundos
+      setInterval(updateStats, 30000);
+
+      // Active nav link
+      const currentPath = window.location.pathname;
+      document.querySelectorAll(".sidebar .nav-link").forEach((link) => {
+        if (link.getAttribute("href") === currentPath) {
+          link.classList.add("active");
+        }
+      });
+    </script>
+
+    {% block scripts %}{% endblock %}
+  </body>
+</html>

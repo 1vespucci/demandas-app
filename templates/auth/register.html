@@ -1,0 +1,271 @@
+{% extends "base.html" %} {% block title %}Registro - Gerenciador de Demandas{%
+endblock %} {% block content %}
+<div
+  class="container-fluid vh-100 d-flex align-items-center justify-content-center"
+>
+  <div class="row w-100">
+    <div class="col-md-8 offset-md-2 col-lg-6 offset-lg-3">
+      <div class="card shadow-lg border-0">
+        <div class="card-body p-5">
+          <div class="text-center mb-4">
+            <i class="bi bi-person-plus display-4 text-primary"></i>
+            <h2 class="fw-bold mt-3">Criar Conta</h2>
+            <p class="text-muted">Preencha os dados para se registrar</p>
+          </div>
+
+          <form method="POST">
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label for="first_name" class="form-label">Nome</label>
+                <input
+                  type="text"
+                  class="form-control"
+                  id="first_name"
+                  name="first_name"
+                  placeholder="Seu nome"
+                  required
+                />
+              </div>
+              <div class="col-md-6 mb-3">
+                <label for="last_name" class="form-label">Sobrenome</label>
+                <input
+                  type="text"
+                  class="form-control"
+                  id="last_name"
+                  name="last_name"
+                  placeholder="Seu sobrenome"
+                  required
+                />
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label for="username" class="form-label">Nome de Usuário</label>
+              <div class="input-group">
+                <span class="input-group-text">
+                  <i class="bi bi-at"></i>
+                </span>
+                <input
+                  type="text"
+                  class="form-control"
+                  id="username"
+                  name="username"
+                  placeholder="Escolha um nome de usuário"
+                  pattern="[a-zA-Z0-9_]{3,20}"
+                  title="3-20 caracteres, apenas letras, números e underscore"
+                  required
+                />
+              </div>
+              <div class="form-text">
+                3-20 caracteres, apenas letras, números e underscore
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label for="email" class="form-label">Email</label>
+              <div class="input-group">
+                <span class="input-group-text">
+                  <i class="bi bi-envelope"></i>
+                </span>
+                <input
+                  type="email"
+                  class="form-control"
+                  id="email"
+                  name="email"
+                  placeholder="seu@email.com"
+                  required
+                />
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label for="password" class="form-label">Senha</label>
+                <div class="input-group">
+                  <span class="input-group-text">
+                    <i class="bi bi-lock"></i>
+                  </span>
+                  <input
+                    type="password"
+                    class="form-control"
+                    id="password"
+                    name="password"
+                    placeholder="Digite uma senha"
+                    minlength="6"
+                    required
+                  />
+                  <button
+                    class="btn btn-outline-secondary"
+                    type="button"
+                    id="togglePassword"
+                  >
+                    <i class="bi bi-eye"></i>
+                  </button>
+                </div>
+                <div class="form-text">Mínimo de 6 caracteres</div>
+              </div>
+              <div class="col-md-6 mb-3">
+                <label for="confirm_password" class="form-label"
+                  >Confirmar Senha</label
+                >
+                <div class="input-group">
+                  <span class="input-group-text">
+                    <i class="bi bi-lock-fill"></i>
+                  </span>
+                  <input
+                    type="password"
+                    class="form-control"
+                    id="confirm_password"
+                    name="confirm_password"
+                    placeholder="Confirme a senha"
+                    required
+                  />
+                  <button
+                    class="btn btn-outline-secondary"
+                    type="button"
+                    id="toggleConfirmPassword"
+                  >
+                    <i class="bi bi-eye"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Password strength indicator -->
+            <div class="mb-3">
+              <div class="progress" style="height: 5px">
+                <div
+                  class="progress-bar"
+                  id="passwordStrength"
+                  role="progressbar"
+                  style="width: 0%"
+                ></div>
+              </div>
+              <small class="text-muted" id="passwordStrengthText"
+                >Digite uma senha</small
+              >
+            </div>
+
+            <div class="mb-3 form-check">
+              <input
+                type="checkbox"
+                class="form-check-input"
+                id="terms"
+                required
+              />
+              <label class="form-check-label" for="terms">
+                Eu concordo com os
+                <a href="#" class="text-decoration-none">termos de uso</a>
+                e
+                <a href="#" class="text-decoration-none"
+                  >política de privacidade</a
+                >
+              </label>
+            </div>
+
+            <button type="submit" class="btn btn-primary w-100 mb-3">
+              <i class="bi bi-person-plus me-2"></i>
+              Criar Conta
+            </button>
+          </form>
+
+          <div class="text-center">
+            <p class="text-muted">
+              Já tem uma conta?
+              <a href="{{ url_for('auth.login') }}" class="text-decoration-none"
+                >Faça login</a
+              >
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %} {% block extra_js %}
+<script>
+  // Toggle password visibility
+  document
+    .getElementById("togglePassword")
+    .addEventListener("click", function () {
+      const password = document.getElementById("password");
+      const icon = this.querySelector("i");
+
+      if (password.type === "password") {
+        password.type = "text";
+        icon.className = "bi bi-eye-slash";
+      } else {
+        password.type = "password";
+        icon.className = "bi bi-eye";
+      }
+    });
+
+  document
+    .getElementById("toggleConfirmPassword")
+    .addEventListener("click", function () {
+      const password = document.getElementById("confirm_password");
+      const icon = this.querySelector("i");
+
+      if (password.type === "password") {
+        password.type = "text";
+        icon.className = "bi bi-eye-slash";
+      } else {
+        password.type = "password";
+        icon.className = "bi bi-eye";
+      }
+    });
+
+  // Password strength checker
+  document.getElementById("password").addEventListener("input", function () {
+    const password = this.value;
+    const strengthBar = document.getElementById("passwordStrength");
+    const strengthText = document.getElementById("passwordStrengthText");
+
+    let strength = 0;
+    let text = "Muito fraca";
+    let color = "bg-danger";
+
+    if (password.length >= 6) strength += 20;
+    if (password.length >= 8) strength += 20;
+    if (/[a-z]/.test(password)) strength += 20;
+    if (/[A-Z]/.test(password)) strength += 20;
+    if (/[0-9]/.test(password)) strength += 10;
+    if (/[^A-Za-z0-9]/.test(password)) strength += 10;
+
+    if (strength >= 80) {
+      text = "Muito forte";
+      color = "bg-success";
+    } else if (strength >= 60) {
+      text = "Forte";
+      color = "bg-info";
+    } else if (strength >= 40) {
+      text = "Média";
+      color = "bg-warning";
+    } else if (strength >= 20) {
+      text = "Fraca";
+      color = "bg-warning";
+    }
+
+    strengthBar.style.width = strength + "%";
+    strengthBar.className = `progress-bar ${color}`;
+    strengthText.textContent = text;
+  });
+
+  // Password confirmation validation
+  document
+    .getElementById("confirm_password")
+    .addEventListener("input", function () {
+      const password = document.getElementById("password").value;
+      const confirmPassword = this.value;
+
+      if (password !== confirmPassword) {
+        this.setCustomValidity("As senhas não coincidem");
+      } else {
+        this.setCustomValidity("");
+      }
+    });
+
+  // Auto-focus first field
+  document.getElementById("first_name").focus();
+</script>
+{% endblock %}

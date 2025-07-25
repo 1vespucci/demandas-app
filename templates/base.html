@@ -1,0 +1,1115 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-bs-theme="auto">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{% block title %}Gerenciador de Demandas{% endblock %}</title>
+        <!-- Brand -->
+        <a
+          href="{{ url_for('dashboard.index') }}"
+          class="flex items-center gap-1 min-w-0"
+        >
+          <span class="flex items-center justify-center rounded bg-indigo-100 dark:bg-indigo-900 p-1">
+            <svg
+              class="w-4 h-4 text-indigo-500 dark:text-indigo-400"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+            >
+              <rect x="3" y="3" width="7" height="7" rx="2" fill="currentColor" />
+              <rect x="14" y="3" width="7" height="7" rx="2" fill="currentColor" />
+              <rect x="14" y="14" width="7" height="7" rx="2" fill="currentColor" />
+              <rect x="3" y="14" width="7" height="7" rx="2" fill="currentColor" />
+            </svg>
+          </span>
+          <div class="flex flex-col min-w-0">
+            <span class="truncate text-sm font-semibold text-indigo-700 dark:text-indigo-300 leading-none">Demandas</span>
+            <span class="hidden xs:inline text-[9px] text-gray-400 dark:text-gray-500 leading-tight tracking-wide">Pro</span>
+          </div>
+        </a>
+        border-radius: 8px;
+        margin: 4px 0;
+        transition: all 0.3s ease;
+      }
+
+      .sidebar .nav-link:hover,
+      .sidebar .nav-link.active {
+        background-color: rgba(255, 255, 255, 0.2);
+        color: white;
+        transform: translateX(5px);
+      }
+
+      .sidebar .nav-link i {
+        width: 20px;
+        text-align: center;
+      }
+
+      .main-content {
+        background-color: var(--bs-body-bg);
+        min-height: 100vh;
+      }
+
+      .card {
+        border: none;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s ease;
+      }
+
+      .card:hover {
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        transform: translateY(-2px);
+      }
+
+      .btn {
+        border-radius: 8px;
+        font-weight: 500;
+        transition: all 0.3s ease;
+      }
+
+      .btn-primary {
+        background: linear-gradient(
+          135deg,
+          var(--primary-color),
+          var(--secondary-color)
+        );
+        border: none;
+      }
+
+      .badge {
+        border-radius: 6px;
+        font-weight: 500;
+      }
+
+      .priority-critico {
+        background-color: var(--danger-color) !important;
+      }
+      .priority-alta {
+        background-color: var(--warning-color) !important;
+      }
+      .priority-media {
+        background-color: var(--info-color) !important;
+      }
+      .priority-baixa {
+        background-color: var(--success-color) !important;
+      }
+
+      .status-pendente {
+        background-color: #6b7280 !important;
+      }
+      .status-andamento {
+        background-color: var(--info-color) !important;
+      }
+      .status-concluido {
+        background-color: var(--success-color) !important;
+      }
+
+      .difficulty-facil {
+        background-color: var(--success-color) !important;
+      }
+      .difficulty-medio {
+        background-color: var(--warning-color) !important;
+      }
+      .difficulty-dificil {
+        background-color: var(--danger-color) !important;
+      }
+
+      .kanban-column {
+        background-color: var(--bs-gray-100);
+        border-radius: 12px;
+        min-height: 500px;
+      }
+
+      .kanban-card {
+        cursor: move;
+        transition: all 0.3s ease;
+      }
+
+      .kanban-card:hover {
+        transform: scale(1.02);
+      }
+
+      .progress-bar {
+        border-radius: 6px;
+      }
+
+      .toast-container {
+        z-index: 9999;
+      }
+
+      .notification-badge {
+        position: absolute;
+        top: -8px;
+        right: -8px;
+        font-size: 0.7rem;
+        min-width: 18px;
+        height: 18px;
+        border-radius: 50%;
+      }
+
+      .user-avatar {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: linear-gradient(
+          135deg,
+          var(--primary-color),
+          var(--secondary-color)
+        );
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: 600;
+        font-size: 0.8rem;
+      }
+
+      .theme-toggle {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        z-index: 1000;
+        border-radius: 50%;
+        width: 56px;
+        height: 56px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+      }
+
+      .loading-spinner {
+        display: inline-block;
+        width: 20px;
+        height: 20px;
+        border: 3px solid rgba(255, 255, 255, 0.3);
+        border-radius: 50%;
+        border-top-color: #fff;
+        animation: spin 1s ease-in-out infinite;
+      }
+
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      .fade-in {
+        animation: fadeIn 0.5s ease-in;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      /* Dark mode específico */
+      [data-bs-theme="dark"] .kanban-column {
+        background-color: var(--bs-gray-800);
+      }
+
+      [data-bs-theme="dark"] .card {
+        background-color: var(--bs-gray-800);
+      }
+
+      /* Responsividade */
+      /* Estilos responsivos */
+      @media (max-width: 768px) {
+        /* Ajustes para touch */
+        .touch-scroll {
+          -webkit-overflow-scrolling: touch;
+          overflow-y: auto;
+        }
+
+        /* Ajustes para botões e inputs */
+        button,
+        input,
+        select {
+          min-height: 44px; /* Tamanho mínimo recomendado para touch targets */
+        }
+
+        /* Ajustes para espaçamento */
+        .mobile-spacing {
+          padding: 0.75rem;
+        }
+
+        /* Melhorar visibilidade de links e botões */
+        a,
+        button {
+          padding: 0.5rem;
+        }
+      }
+
+      /* Prevenir scroll quando sidebar móvel está aberto */
+      .sidebar-open {
+        overflow: hidden;
+      }
+    </style>
+
+    {% block extra_css %}{% endblock %}
+  </head>
+  <body>
+    <!-- Navbar Tailwind -->
+    <nav
+      class="bg-white dark:bg-gray-800 shadow-sm w-full fixed top-0 z-50 flex flex-col"
+    >
+      <!-- Campo de busca móvel -->
+      <div
+        id="mobileSearch"
+        class="hidden w-full p-2 border-b dark:border-gray-700"
+      >
+        <div class="relative">
+          <input
+            type="text"
+            placeholder="Buscar tarefas..."
+            class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md focus:ring-indigo-500 focus:border-indigo-500"
+          />
+          <button
+            type="button"
+            class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400"
+            onclick="document.getElementById('mobileSearch').classList.add('hidden')"
+          >
+            <svg
+              class="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M6 18L18 6M6 6l12 12"
+              />
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <div
+        class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 flex items-center justify-between h-14 sm:h-16 w-full"
+      >
+        <!-- Sidebar toggle (mobile) -->
+        <button
+          id="sidebarToggle"
+          type="button"
+          class="inline-flex items-center justify-center p-1.5 rounded-md text-gray-500 hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-500 lg:hidden"
+        >
+          <svg
+            class="h-5 w-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M4 6h16M4 12h16M4 18h16"
+            ></path>
+          </svg>
+        </button>
+
+        <!-- Brand -->
+        <a
+          href="{{ url_for('dashboard.index') }}"
+          class="flex items-center gap-1.5"
+        >
+          <svg
+            class="w-5 h-5 sm:w-6 sm:h-6 text-indigo-500"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+          >
+            <rect x="3" y="3" width="7" height="7" rx="2" fill="currentColor" />
+            <rect
+              x="14"
+              y="3"
+              width="7"
+              height="7"
+              rx="2"
+              fill="currentColor"
+            />
+            <rect
+              x="14"
+              y="14"
+              width="7"
+              height="7"
+              rx="2"
+              fill="currentColor"
+            />
+            <rect
+              x="3"
+              y="14"
+              width="7"
+              height="7"
+              rx="2"
+              fill="currentColor"
+            />
+          </svg>
+          <div class="flex flex-col">
+            <span
+              class="text-sm sm:text-lg font-bold text-indigo-600 leading-none"
+              >Demandas</span
+            >
+            <span class="text-[10px] sm:text-xs text-gray-500 leading-tight"
+              >Pro Edition</span
+            >
+          </div>
+        </a>
+        <!-- Right side -->
+        <div class="flex items-center space-x-2 sm:space-x-4">
+          <!-- Botão de busca móvel -->
+          <button
+            type="button"
+            class="sm:hidden p-2 text-gray-500 hover:text-gray-700 focus:outline-none"
+            onclick="document.getElementById('mobileSearch').classList.toggle('hidden')"
+          >
+            <svg
+              class="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+              />
+            </svg>
+          </button>
+
+          <!-- Campo de busca desktop -->
+          <div class="relative hidden sm:block">
+            <input
+              type="text"
+              id="quickSearch"
+              placeholder="Buscar tarefas..."
+              class="block w-40 sm:w-52 px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md focus:ring-indigo-500 focus:border-indigo-500"
+            />
+            <svg
+              class="w-4 h-4 absolute right-2 top-1/2 -translate-y-1/2 text-gray-400"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+            >
+              <circle cx="11" cy="11" r="8" />
+              <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
+          </div>
+
+          <!-- Notificações -->
+          {% if current_user.is_authenticated %}
+          <div class="relative">
+            <button id="notificationButton" class="relative focus:outline-none">
+              <svg
+                class="w-6 h-6 text-gray-500"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
+                />
+              </svg>
+              <span
+                id="notificationCount"
+                class="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full px-1.5 py-0.5"
+                style="display: none"
+              ></span>
+            </button>
+            <!-- Dropdown de notificações (implementar com JS se necessário) -->
+            <div
+              id="notificationsList"
+              class="hidden absolute right-0 mt-2 w-72 bg-white border border-gray-200 rounded-md shadow-lg z-50"
+            ></div>
+          </div>
+
+          <!-- Usuário -->
+          <div class="relative">
+            <button
+              id="userMenuButton"
+              class="flex items-center focus:outline-none"
+            >
+              <div class="user-avatar mr-2">
+                {{ current_user.first_name[0] }}{{ current_user.last_name[0] }}
+              </div>
+              <span class="hidden md:inline"
+                >{{ current_user.get_full_name() }}</span
+              >
+            </button>
+            <!-- Dropdown de usuário (implementar com JS se necessário) -->
+            <div
+              id="userMenu"
+              class="hidden absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-md shadow-lg z-50"
+            >
+              <a
+                href="{{ url_for('auth.profile') }}"
+                class="block px-4 py-2 text-gray-700 hover:bg-gray-100"
+                >Perfil</a
+              >
+              <a
+                href="{{ url_for('auth.edit_profile') }}"
+                class="block px-4 py-2 text-gray-700 hover:bg-gray-100"
+                >Configurações</a
+              >
+              <div class="border-t my-1"></div>
+              <a
+                href="{{ url_for('auth.logout') }}"
+                class="block px-4 py-2 text-gray-700 hover:bg-gray-100"
+                >Sair</a
+              >
+            </div>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </nav>
+
+    <div class="pt-14 sm:pt-16">
+      <div class="flex flex-col lg:flex-row min-h-screen">
+        {% if current_user.is_authenticated %}
+        <!-- Sidebar Tailwind -->
+        <div
+          class="fixed inset-0 z-40 transform transition-transform duration-300 ease-in-out lg:transform-none lg:opacity-100 translate-x-[-100%] lg:relative lg:translate-x-0 lg:block lg:w-1/5 bg-gradient-to-br from-indigo-500 to-purple-500 min-h-screen shadow-lg"
+          id="sidebar"
+        >
+          <nav class="flex flex-col gap-1 p-4">
+            <a
+              href="{{ url_for('dashboard.index') }}"
+              class="flex items-center gap-2 px-3 py-2 rounded text-white font-medium hover:bg-indigo-600 transition {{ 'bg-indigo-600' if request.endpoint == 'dashboard.index' else '' }}"
+            >
+              <svg
+                class="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0h6"
+                />
+              </svg>
+              Dashboard
+            </a>
+            <a
+              href="{{ url_for('dashboard.index', view='kanban') }}"
+              class="flex items-center gap-2 px-3 py-2 rounded text-white font-medium hover:bg-indigo-600 transition"
+            >
+              <svg
+                class="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                viewBox="0 0 24 24"
+              >
+                <rect
+                  x="3"
+                  y="3"
+                  width="7"
+                  height="7"
+                  rx="2"
+                  fill="currentColor"
+                />
+                <rect
+                  x="14"
+                  y="3"
+                  width="7"
+                  height="7"
+                  rx="2"
+                  fill="currentColor"
+                />
+                <rect
+                  x="14"
+                  y="14"
+                  width="7"
+                  height="7"
+                  rx="2"
+                  fill="currentColor"
+                />
+                <rect
+                  x="3"
+                  y="14"
+                  width="7"
+                  height="7"
+                  rx="2"
+                  fill="currentColor"
+                />
+              </svg>
+              Kanban
+            </a>
+            <a
+              href="{{ url_for('dashboard.new_task') }}"
+              class="flex items-center gap-2 px-3 py-2 rounded text-white font-medium hover:bg-indigo-600 transition"
+            >
+              <svg
+                class="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                viewBox="0 0 24 24"
+              >
+                <path d="M12 4v16m8-8H4" />
+              </svg>
+              Nova Tarefa
+            </a>
+            <a
+              href="{{ url_for('dashboard.projects') }}"
+              class="flex items-center gap-2 px-3 py-2 rounded text-white font-medium hover:bg-indigo-600 transition"
+            >
+              <svg
+                class="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  d="M3 7v4a1 1 0 001 1h3V6a1 1 0 00-1-1H4a1 1 0 00-1 1zm0 0V5a2 2 0 012-2h2a2 2 0 012 2v2m0 0h6m0 0V5a2 2 0 012-2h2a2 2 0 012 2v2m0 0v4a1 1 0 01-1 1h-3v5a1 1 0 001 1h2a1 1 0 001-1v-4"
+                />
+              </svg>
+              Projetos
+            </a>
+            <a
+              href="{{ url_for('dashboard.analytics') }}"
+              class="flex items-center gap-2 px-3 py-2 rounded text-white font-medium hover:bg-indigo-600 transition"
+            >
+              <svg
+                class="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                viewBox="0 0 24 24"
+              >
+                <path d="M11 19V6m4 13V10m4 9V4M7 19v-4M3 19v-2" />
+              </svg>
+              Analytics
+            </a>
+
+            <hr class="my-4 border-white/30" />
+
+            <div
+              class="px-3 py-1 text-white/70 text-xs uppercase font-bold tracking-wider"
+            >
+              Filtros Rápidos
+            </div>
+            <a
+              href="{{ url_for('dashboard.index', status='pendente') }}"
+              class="flex items-center gap-2 px-3 py-2 rounded text-white font-medium hover:bg-indigo-600 transition"
+            >
+              <svg
+                class="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                viewBox="0 0 24 24"
+              >
+                <circle cx="12" cy="12" r="10" />
+                <path d="M12 6v6l4 2" />
+              </svg>
+              Pendentes
+            </a>
+            <a
+              href="{{ url_for('dashboard.index', status='andamento') }}"
+              class="flex items-center gap-2 px-3 py-2 rounded text-white font-medium hover:bg-indigo-600 transition"
+            >
+              <svg
+                class="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                viewBox="0 0 24 24"
+              >
+                <polygon points="5 3 19 12 5 21 5 3" />
+              </svg>
+              Em Andamento
+            </a>
+            <a
+              href="{{ url_for('dashboard.index', priority='critico') }}"
+              class="flex items-center gap-2 px-3 py-2 rounded text-white font-medium hover:bg-indigo-600 transition"
+            >
+              <svg
+                class="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                viewBox="0 0 24 24"
+              >
+                <path d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              Críticas
+            </a>
+
+            {% if current_user.has_permission('view_all_tasks') %}
+            <hr class="my-4 border-white/30" />
+            <div
+              class="px-3 py-1 text-white/70 text-xs uppercase font-bold tracking-wider"
+            >
+              Administração
+            </div>
+            <a
+              href="/admin/users"
+              class="flex items-center gap-2 px-3 py-2 rounded text-white font-medium hover:bg-indigo-600 transition"
+            >
+              <svg
+                class="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87M16 3.13a4 4 0 010 7.75M8 3.13a4 4 0 000 7.75"
+                />
+              </svg>
+              Usuários
+            </a>
+            <a
+              href="/admin/teams"
+              class="flex items-center gap-2 px-3 py-2 rounded text-white font-medium hover:bg-indigo-600 transition"
+            >
+              <svg
+                class="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87M16 3.13a4 4 0 010 7.75M8 3.13a4 4 0 000 7.75"
+                />
+              </svg>
+              Equipes
+            </a>
+            {% endif %}
+          </nav>
+        </div>
+        {% endif %}
+
+        <!-- Conteúdo Principal -->
+        <div
+          class="lg:w-{{ '10/12' if current_user.is_authenticated else 'full' }} p-2 sm:p-4 min-h-screen bg-white dark:bg-gray-800 overflow-x-hidden"
+        >
+          <!-- Barra de ações móvel -->
+          <div
+            class="lg:hidden flex items-center justify-between mb-4 bg-gray-50 dark:bg-gray-700 p-2 rounded-lg shadow-sm"
+          >
+            <div class="flex gap-2">
+              <button
+                type="button"
+                class="inline-flex items-center justify-center p-2 rounded-md text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
+                onclick="document.getElementById('mobileFilters').classList.toggle('hidden')"
+              >
+                <svg
+                  class="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"
+                  />
+                </svg>
+                <span class="ml-2">Filtros</span>
+              </button>
+
+              <button
+                type="button"
+                class="inline-flex items-center justify-center p-2 rounded-md text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
+                onclick="document.getElementById('mobileSort').classList.toggle('hidden')"
+              >
+                <svg
+                  class="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12"
+                  />
+                </svg>
+                <span class="ml-2">Ordenar</span>
+              </button>
+            </div>
+
+            <a
+              href="{{ url_for('dashboard.new_task') }}"
+              class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+            >
+              Nova Tarefa
+            </a>
+          </div>
+
+          <!-- Mensagens Flash -->
+          {% with messages = get_flashed_messages(with_categories=true) %} {% if
+          messages %}
+          <div class="fixed top-0 right-0 p-3 z-50">
+            {% for category, message in messages %}
+            <div
+              class="bg-{{ 'red-500' if category == 'error' else ('green-500' if category == 'success' else 'blue-500') }} text-white px-4 py-3 rounded shadow-lg mb-3 flex items-center justify-between"
+              role="alert"
+              x-data="{ show: true }"
+              x-show="show"
+              x-init="setTimeout(() => show = false, 5000)"
+            >
+              <div class="flex-grow">{{ message }}</div>
+              <button
+                type="button"
+                class="ml-4 text-white hover:text-gray-200 focus:outline-none"
+                @click="show = false"
+              >
+                <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                  <path
+                    fill-rule="evenodd"
+                    d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                    clip-rule="evenodd"
+                  />
+                </svg>
+              </button>
+            </div>
+            {% endfor %}
+          </div>
+          {% endif %} {% endwith %} {% block content %}{% endblock %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Toggle Tema -->
+    <button
+      class="fixed bottom-5 right-5 p-3 rounded-full bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+      id="themeToggle"
+      title="Alternar tema"
+    >
+      <svg
+        class="h-6 w-6"
+        id="themeIcon"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"
+        />
+      </svg>
+    </button>
+
+    <!-- Modal de busca rápida -->
+    <div class="fixed inset-0 bg-black bg-opacity-50 hidden" id="searchModal">
+      <div class="fixed inset-0 flex items-center justify-center p-4">
+        <div
+          class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full"
+        >
+          <div
+            class="flex items-center justify-between p-4 border-b dark:border-gray-700"
+          >
+            <h5 class="text-lg font-semibold text-gray-900 dark:text-white">
+              Resultados da Busca
+            </h5>
+            <button
+              type="button"
+              class="text-gray-400 hover:text-gray-500 focus:outline-none"
+              onclick="document.getElementById('searchModal').classList.add('hidden')"
+            >
+              <svg
+                class="h-6 w-6"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+            </button>
+          </div>
+          <div class="p-4" id="searchResults">
+            <!-- Resultados carregados via JS -->
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- (Opcional) Adicione plugins JS do Tailwind se necessário -->
+
+    <script>
+      // Gerenciamento de tema
+      const themeToggle = document.getElementById("themeToggle");
+      const themeIcon = document.getElementById("themeIcon");
+      const htmlElement = document.documentElement;
+
+      function setTheme(theme) {
+        if (theme === "dark") {
+          htmlElement.classList.add("dark");
+        } else {
+          htmlElement.classList.remove("dark");
+        }
+        localStorage.setItem("theme", theme);
+
+        // Atualizar ícone
+        if (theme === "dark") {
+          themeIcon.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />`;
+        } else {
+          themeIcon.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />`;
+        }
+      }
+
+      // Inicializar tema
+      if (
+        localStorage.theme === "dark" ||
+        (!("theme" in localStorage) &&
+          window.matchMedia("(prefers-color-scheme: dark)").matches)
+      ) {
+        setTheme("dark");
+      } else {
+        setTheme("light");
+      }
+
+      themeToggle.addEventListener("click", () => {
+        const isDark = htmlElement.classList.contains("dark");
+        setTheme(isDark ? "light" : "dark");
+      });
+
+      // Sidebar toggle para mobile
+      const sidebarToggle = document.getElementById("sidebarToggle");
+      const sidebar = document.getElementById("sidebar");
+      const backdrop = document.createElement("div");
+      backdrop.className = "fixed inset-0 bg-black bg-opacity-50 z-30 hidden";
+      document.body.appendChild(backdrop);
+
+      if (sidebarToggle) {
+        sidebarToggle.addEventListener("click", () => {
+          sidebar.classList.toggle("translate-x-[-100%]");
+          backdrop.classList.toggle("hidden");
+        });
+
+        // Fechar ao clicar fora
+        backdrop.addEventListener("click", () => {
+          sidebar.classList.add("translate-x-[-100%]");
+          backdrop.classList.add("hidden");
+        });
+
+        // Fechar ao redimensionar para desktop
+        window.addEventListener("resize", () => {
+          if (window.innerWidth >= 1024) {
+            sidebar.classList.add("translate-x-[-100%]");
+            backdrop.classList.add("hidden");
+          }
+        });
+      }
+
+      // Auto-inicializar toasts
+      document.addEventListener("DOMContentLoaded", function () {
+        const toasts = document.querySelectorAll("[role='alert']");
+        toasts.forEach((toast) => {
+          setTimeout(() => {
+            toast.remove();
+          }, 5000);
+        });
+      });
+
+      // Busca rápida
+      const quickSearch = document.getElementById("quickSearch");
+      const searchModal = document.getElementById("searchModal");
+
+      let searchTimeout;
+      quickSearch.addEventListener("input", function () {
+        clearTimeout(searchTimeout);
+        const query = this.value.trim();
+
+        if (query.length >= 2) {
+          searchTimeout = setTimeout(() => {
+            fetch(`/api/search?q=${encodeURIComponent(query)}`)
+              .then((response) => response.json())
+              .then((data) => {
+                const resultsContainer =
+                  document.getElementById("searchResults");
+
+                if (data.length === 0) {
+                  resultsContainer.innerHTML =
+                    '<p class="text-gray-500 dark:text-gray-400">Nenhum resultado encontrado.</p>';
+                } else {
+                  resultsContainer.innerHTML = data
+                    .map(
+                      (task) => `
+                                    <div class="border-b dark:border-gray-700 pb-2 mb-2">
+                                        <a href="/task/${
+                                          task.id
+                                        }" class="block hover:bg-gray-50 dark:hover:bg-gray-700 -mx-4 px-4 py-2 rounded-lg">
+                                            <h6 class="text-gray-900 dark:text-white font-medium mb-1">${
+                                              task.title
+                                            }</h6>
+                                            <div class="flex gap-2">
+                                                <span class="px-2 py-1 text-xs font-medium rounded-full ${getStatusClass(
+                                                  task.status
+                                                )}">${task.status}</span>
+                                                <span class="px-2 py-1 text-xs font-medium rounded-full ${getPriorityClass(
+                                                  task.priority
+                                                )}">${task.priority}</span>
+                                                <span class="px-2 py-1 text-xs font-medium rounded-full bg-gray-200 text-gray-800 dark:bg-gray-700 dark:text-gray-300">${
+                                                  task.category
+                                                }</span>
+                                            </div>
+                                        </a>
+                                    </div>
+                                `
+                    )
+                    .join("");
+                }
+
+                searchModal.classList.remove("hidden");
+              })
+              .catch((error) => console.error("Erro na busca:", error));
+          }, 300);
+        }
+      });
+
+      function getStatusClass(status) {
+        const classes = {
+          pendente: "bg-gray-500 text-white",
+          andamento: "bg-blue-500 text-white",
+          concluido: "bg-green-500 text-white",
+        };
+        return classes[status] || "bg-gray-200 text-gray-800";
+      }
+
+      function getPriorityClass(priority) {
+        const classes = {
+          critico: "bg-red-500 text-white",
+          alta: "bg-yellow-500 text-white",
+          media: "bg-blue-500 text-white",
+          baixa: "bg-green-500 text-white",
+        };
+        return classes[priority] || "bg-gray-200 text-gray-800";
+      }
+
+      // Carregar notificações
+      function loadNotifications() {
+        fetch("/api/notifications?unread_only=true")
+          .then((response) => response.json())
+          .then((data) => {
+            const count = data.unread_count;
+            const badge = document.getElementById("notificationCount");
+            const list = document.getElementById("notificationsList");
+
+            if (count > 0) {
+              badge.textContent = count > 99 ? "99+" : count;
+              badge.style.display = "block";
+            } else {
+              badge.style.display = "none";
+            }
+
+            if (data.notifications.length === 0) {
+              list.innerHTML =
+                '<li class="dropdown-item text-muted">Nenhuma notificação</li>';
+            } else {
+              list.innerHTML = data.notifications
+                .map(
+                  (notification) => `
+                            <li>
+                                <a class="dropdown-item ${
+                                  !notification.is_read ? "bg-light" : ""
+                                }" 
+                                   href="${notification.link || "#"}"
+                                   onclick="markAsRead(${notification.id})">
+                                    <div class="fw-bold">${
+                                      notification.title
+                                    }</div>
+                                    <div class="text-muted small">${
+                                      notification.message
+                                    }</div>
+                                    <div class="text-muted small">${new Date(
+                                      notification.created_at
+                                    ).toLocaleDateString()}</div>
+                                </a>
+                            </li>
+                        `
+                )
+                .join("");
+            }
+          })
+          .catch((error) =>
+            console.error("Erro ao carregar notificações:", error)
+          );
+      }
+
+      // Marcar notificação como lida
+      function markAsRead(notificationId) {
+        fetch(`/api/notifications/${notificationId}/read`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }).then(() => loadNotifications());
+      }
+
+      // Marcar todas como lidas
+      document
+        .getElementById("markAllRead")
+        ?.addEventListener("click", function () {
+          fetch("/api/notifications/mark-all-read", {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+            },
+          }).then(() => loadNotifications());
+        });
+
+      // Carregar notificações a cada minuto
+      if (document.getElementById("notificationCount")) {
+        loadNotifications();
+        setInterval(loadNotifications, 60000);
+      }
+
+      // Funções utilitárias globais
+      window.showToast = function (message, type = "success") {
+        const toastContainer =
+          document.querySelector(".toast-container") ||
+          document.body.appendChild(document.createElement("div"));
+        toastContainer.className =
+          "toast-container position-fixed top-0 end-0 p-3";
+
+        const toast = document.createElement("div");
+        toast.className = `toast align-items-center text-bg-${type} border-0`;
+        toast.setAttribute("role", "alert");
+        toast.innerHTML = `
+                <div class="d-flex">
+                    <div class="toast-body">${message}</div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                </div>
+            `;
+
+        toastContainer.appendChild(toast);
+        new bootstrap.Toast(toast).show();
+
+        // Remover após 5 segundos
+        setTimeout(() => toast.remove(), 5000);
+      };
+    </script>
+
+    {% block extra_js %}{% endblock %}
+  </body>
+</html>

@@ -1,0 +1,906 @@
+{% extends "base_simple.html" %} {% block title %}{{ task.title }} - Gerenciador
+de Demandas{% endblock %} {% block content %}
+<div class="row">
+  <!-- Coluna Principal -->
+  <div class="col-lg-8">
+    <!-- Header da tarefa -->
+    <div class="card mb-4" style="border-left: 4px solid {{ task.color }};">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-start mb-3">
+          <div class="flex-grow-1">
+            <h2 class="h4 mb-2">{{ task.title }}</h2>
+            <div class="d-flex gap-2 mb-2">
+              <span class="badge status-{{ task.status }}"
+                >{{ task.status|title }}</span
+              >
+              <span class="badge priority-{{ task.priority }}"
+                >{{ task.priority|title }}</span
+              >
+              <span class="badge bg-secondary">{{ task.category }}</span>
+              {% for tag in task.get_tags_list() %}
+              <span class="badge bg-light text-dark">{{ tag }}</span>
+              {% endfor %}
+            </div>
+            {% if task.description %}
+            <p class="text-muted mb-0">{{ task.description }}</p>
+            {% endif %}
+          </div>
+          <div class="dropdown">
+            <button class="btn btn-outline-secondary" data-bs-toggle="dropdown">
+              <i class="bi bi-three-dots"></i>
+            </button>
+            <ul class="dropdown-menu">
+              <li>
+                <a
+                  class="dropdown-item"
+                  href="{{ url_for('edit_task', task_id=task.id) }}"
+                >
+                  <i class="bi bi-pencil me-2"></i>Editar
+                </a>
+              </li>
+              <li><hr class="dropdown-divider" /></li>
+              <li>
+                <a
+                  class="dropdown-item text-danger"
+                  href="#"
+                  onclick="confirmDelete()"
+                >
+                  <i class="bi bi-trash me-2"></i>Excluir
+                </a>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Progresso -->
+        <div class="mb-3">
+          <div class="d-flex justify-content-between align-items-center mb-1">
+            <label class="form-label mb-0">Progresso</label>
+            <span class="text-muted">{{ task.progress }}%</span>
+          </div>
+          <div class="progress mb-2">
+            <div
+              class="progress-bar"
+              style="width: {{ task.progress }}%"
+              id="progressBar"
+            ></div>
+          </div>
+          <input
+            type="range"
+            class="form-range"
+            min="0"
+            max="100"
+            value="{{ task.progress }}"
+            id="progressSlider"
+            onchange="updateProgress(this.value)"
+          />
+        </div>
+
+        <!-- Status rápido -->
+        <div class="row g-2">
+          <div class="col-auto">
+            <button
+              class="btn btn-sm btn-outline-secondary"
+              onclick="updateStatus('pendente')"
+            >
+              <i class="bi bi-clock me-1"></i>Pendente
+            </button>
+          </div>
+          <div class="col-auto">
+            <button
+              class="btn btn-sm btn-outline-primary"
+              onclick="updateStatus('andamento')"
+            >
+              <i class="bi bi-play me-1"></i>Iniciar
+            </button>
+          </div>
+          <div class="col-auto">
+            <button
+              class="btn btn-sm btn-outline-success"
+              onclick="updateStatus('concluido')"
+            >
+              <i class="bi bi-check me-1"></i>Concluir
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Comentários -->
+    <div class="card">
+      <div class="card-header">
+        <h5 class="mb-0">
+          <i class="bi bi-chat-dots me-2"></i>
+          Comentários ({{ comments|length }})
+        </h5>
+      </div>
+      <div class="card-body">
+        <!-- Formulário de novo comentário -->
+        <form
+          method="POST"
+          action="{{ url_for('add_comment', task_id=task.id) }}"
+          class="mb-4"
+        >
+          <div class="mb-3">
+            <textarea
+              class="form-control"
+              name="content"
+              rows="3"
+              placeholder="Adicione um comentário..."
+              required
+            ></textarea>
+          </div>
+          <div class="d-flex justify-content-end">
+            <button type="submit" class="btn btn-primary">
+              <i class="bi bi-send me-2"></i>Comentar
+            </button>
+          </div>
+        </form>
+
+        <!-- Lista de comentários -->
+        {% for comment in comments %}
+        <div class="d-flex mb-3">
+          <div class="user-avatar me-3">
+            {{ comment.author_name[0] if comment.author_name else 'U' }}
+          </div>
+          <div class="flex-grow-1">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <h6 class="mb-0">{{ comment.author_name or 'Usuário' }}</h6>
+              <small class="text-muted"
+                >{{ comment.created_at.strftime('%d/%m/%Y às %H:%M') }}</small
+              >
+            </div>
+            <p class="mb-0">{{ comment.content }}</p>
+          </div>
+        </div>
+        {% if not loop.last %}
+        <hr />
+        {% endif %} {% else %}
+        <div class="text-center py-4">
+          <i class="bi bi-chat display-4 text-muted"></i>
+          <p class="text-muted mt-2">Nenhum comentário ainda.</p>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Sidebar -->
+  <div class="col-lg-4">
+    <!-- Informações da tarefa -->
+    <div class="card mb-4">
+      <div class="card-header">
+        <h6 class="mb-0">Informações</h6>
+      </div>
+      <div class="card-body">
+        <!-- Responsável -->
+        <div class="mb-3">
+          <label class="form-label small text-muted">Responsável</label>
+          <div class="d-flex align-items-center">
+            {% if task.assignee %}
+            <div class="user-avatar me-2">
+              {{ task.assignee.first_name[0] }}{{ task.assignee.last_name[0] }}
+            </div>
+            <span>{{ task.assignee.get_full_name() }}</span>
+            {% else %}
+            <span class="text-muted">Não atribuído</span>
+            {% endif %}
+          </div>
+        </div>
+
+        <!-- Criado por -->
+        <div class="mb-3">
+          <label class="form-label small text-muted">Criado por</label>
+          <div class="d-flex align-items-center">
+            <div class="user-avatar me-2">U</div>
+            <span>Usuário</span>
+          </div>
+        </div>
+
+        <!-- Datas -->
+        <div class="mb-3">
+          <label class="form-label small text-muted">Criado em</label>
+          <div>{{ task.created_at.strftime('%d/%m/%Y às %H:%M') }}</div>
+        </div>
+
+        {% if task.due_date %}
+        <div class="mb-3">
+          <label class="form-label small text-muted">Vencimento</label>
+          <div class="{% if task.is_overdue() %}text-danger{% endif %}">
+            {{ task.due_date.strftime('%d/%m/%Y às %H:%M') }} {% if
+            task.is_overdue() %}
+            <i class="bi bi-exclamation-triangle ms-1"></i>
+            {% endif %}
+          </div>
+        </div>
+        {% endif %}
+
+        <!-- Tempo -->
+        {% if task.estimated_hours > 0 %}
+        <div class="mb-3">
+          <label class="form-label small text-muted">Tempo Estimado</label>
+          <div>{{ task.estimated_hours }}h</div>
+        </div>
+        {% endif %} {% if task.actual_hours > 0 %}
+        <div class="mb-3">
+          <label class="form-label small text-muted">Tempo Gasto</label>
+          <div>{{ task.actual_hours }}h</div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Ações rápidas -->
+    <div class="card mb-4">
+      <div class="card-header">
+        <h6 class="mb-0">Ações</h6>
+      </div>
+      <div class="card-body">
+        <div class="d-grid gap-2">
+          <a
+            href="{{ url_for('edit_task', task_id=task.id) }}"
+            class="btn btn-outline-primary"
+          >
+            <i class="bi bi-pencil me-2"></i>Editar Tarefa
+          </a>
+
+          <button class="btn btn-outline-info" onclick="duplicateTask()">
+            <i class="bi bi-files me-2"></i>Duplicar Tarefa
+          </button>
+
+          <button class="btn btn-outline-secondary" onclick="window.testFunction && window.testFunction()" id="cronometroBtn">
+            <i class="bi bi-stopwatch me-2"></i>Teste Clique
+          </button>
+
+          <button class="btn btn-success" onclick="window.showTimerModal && window.showTimerModal()" id="startTimerBtn">
+            <i class="bi bi-play me-2"></i>CRONÔMETRO
+          </button>
+
+          <hr />
+
+          <button class="btn btn-outline-danger" onclick="confirmDelete()">
+            <i class="bi bi-trash me-2"></i>Excluir Tarefa
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Histórico de atividades -->
+    <div class="card">
+      <div class="card-header">
+        <h6 class="mb-0">Atividades Recentes</h6>
+      </div>
+      <div class="card-body">
+        <div class="timeline">
+          <div class="timeline-item">
+            <div class="timeline-marker bg-success"></div>
+            <div class="timeline-content">
+              <small class="text-muted"
+                >{{ task.created_at.strftime('%d/%m/%Y %H:%M') }}</small
+              >
+              <p class="mb-0">Tarefa criada por Usuário</p>
+            </div>
+          </div>
+
+          {% if task.updated_at != task.created_at %}
+          <div class="timeline-item">
+            <div class="timeline-marker bg-info"></div>
+            <div class="timeline-content">
+              <small class="text-muted"
+                >{{ task.updated_at.strftime('%d/%m/%Y %H:%M') }}</small
+              >
+              <p class="mb-0">Tarefa atualizada</p>
+            </div>
+          </div>
+          {% endif %} {% for comment in comments[-3:] %}
+          <div class="timeline-item">
+            <div class="timeline-marker bg-warning"></div>
+            <div class="timeline-content">
+              <small class="text-muted"
+                >{{ comment.created_at.strftime('%d/%m/%Y %H:%M') }}</small
+              >
+              <p class="mb-0">
+                {{ comment.author_name or 'Usuário' }} comentou
+              </p>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal de confirmação de exclusão -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Confirmar Exclusão</h5>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="modal"
+        ></button>
+      </div>
+      <div class="modal-body">
+        <p>
+          Tem certeza que deseja excluir a tarefa
+          <strong>"{{ task.title }}"</strong>?
+        </p>
+        <p class="text-muted">Esta ação não pode ser desfeita.</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          Cancelar
+        </button>
+        <form
+          method="POST"
+          action="{{ url_for('delete_task', task_id=task.id) }}"
+          style="display: inline"
+        >
+          <button type="submit" class="btn btn-danger">
+            <i class="bi bi-trash me-2"></i>Excluir
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal do cronômetro -->
+<div class="modal fade" id="timerModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Cronômetro - {{ task.title }}</h5>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="modal"
+        ></button>
+      </div>
+      <div class="modal-body text-center">
+        <div class="display-3 mb-3" id="timerDisplay">00:00:00</div>
+        <div class="d-flex justify-content-center gap-2">
+          <button class="btn btn-success" id="startBtn" onclick="resumeTimer()">
+            <i class="bi bi-play"></i> Iniciar
+          </button>
+          <button
+            class="btn btn-warning"
+            id="pauseBtn"
+            onclick="pauseTimer()"
+            style="display: none"
+          >
+            <i class="bi bi-pause"></i> Pausar
+          </button>
+          <button class="btn btn-danger" id="stopBtn" onclick="stopTimer()">
+            <i class="bi bi-stop"></i> Parar e Salvar
+          </button>
+        </div>
+        <div class="mt-3">
+          <small class="text-muted d-block mb-2">Opcional: Adicione uma descrição</small>
+          <textarea
+            class="form-control"
+            id="timeDescription"
+            rows="2"
+            placeholder="Descrição do tempo trabalhado..."
+          ></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          Fechar
+        </button>
+      </div>
+            placeholder="Descrição do que foi realizado..."
+          ></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          Fechar
+        </button>
+        <button type="button" class="btn btn-primary" onclick="saveTime()">
+          Salvar Tempo
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %} {% block extra_css %}
+<style>
+  .timeline {
+    position: relative;
+    padding-left: 30px;
+  }
+
+  .timeline-item {
+    position: relative;
+    margin-bottom: 20px;
+  }
+
+  .timeline-marker {
+    position: absolute;
+    left: -35px;
+    top: 5px;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+  }
+
+  .timeline::before {
+    content: "";
+    position: absolute;
+    left: -31px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: #dee2e6;
+  }
+</style>
+{% endblock %} {% block extra_js %}
+<script>
+  console.log('=== SCRIPT CARREGANDO ===');
+  
+  // FORÇA A CRIAÇÃO DAS FUNÇÕES NO WINDOW
+  window.testFunction = function() {
+    alert('🎉 JAVASCRIPT FUNCIONANDO!');
+    console.log('Teste executado com sucesso!');
+  };
+  
+  // FUNÇÃO DO CRONÔMETRO DIRETA
+  window.showTimerModal = function() {
+    console.log('🔥 CRONÔMETRO ATIVADO!');
+    alert('⏱️ CRONÔMETRO INICIADO!');
+    
+    // Criar modal simples se não existir
+    let modal = document.getElementById('timerModal');
+    if (!modal) {
+      modal = document.createElement('div');
+      modal.innerHTML = `
+        <div style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); 
+                    background: white; padding: 30px; border: 2px solid #007bff; border-radius: 10px;
+                    box-shadow: 0 4px 20px rgba(0,0,0,0.3); z-index: 9999;">
+          <h3>🔥 CRONÔMETRO FUNCIONANDO! 🔥</h3>
+          <div id="display" style="font-size: 2rem; text-align: center; margin: 20px 0;">00:00:00</div>
+          <div style="text-align: center;">
+            <button onclick="window.startCounting()" style="margin: 5px; padding: 10px 20px; font-size: 1rem;">▶️ Iniciar</button>
+            <button onclick="window.pauseCounting()" style="margin: 5px; padding: 10px 20px; font-size: 1rem;">⏸️ Pausar</button>
+            <button onclick="window.closeTimer()" style="margin: 5px; padding: 10px 20px; font-size: 1rem;">❌ Fechar</button>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+    }
+    modal.style.display = 'block';
+  };
+  
+  // FUNÇÕES PARA BOTÕES DE STATUS
+  window.updateStatus = function(status) {
+    console.log('Atualizando status para:', status);
+    
+    fetch(`/api/task/{{ task.id }}/status`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ status: status }),
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        alert('✅ Status atualizado para: ' + status);
+        setTimeout(() => location.reload(), 1000);
+      } else {
+        alert('❌ Erro ao atualizar status');
+      }
+    })
+    .catch(error => {
+      console.error('Erro:', error);
+      alert('❌ Erro ao conectar com servidor');
+    });
+  };
+  
+  window.duplicateTask = function() {
+    console.log('Duplicando tarefa...');
+    if (confirm('🔄 Deseja duplicar esta tarefa?')) {
+      alert('🚧 Funcionalidade em desenvolvimento');
+    }
+  };
+  
+  window.confirmDelete = function() {
+    console.log('Confirmando exclusão...');
+    if (confirm('⚠️ Tem certeza que deseja excluir esta tarefa? Esta ação não pode ser desfeita.')) {
+      // Redirecionar para rota de exclusão
+      const form = document.createElement('form');
+      form.method = 'POST';
+      form.action = `/task/{{ task.id }}/delete`;
+      document.body.appendChild(form);
+      form.submit();
+    }
+  };
+  
+  // CONTADORES
+  let seconds = 0;
+  let interval = null;
+  
+  window.startCounting = function() {
+    if (interval) clearInterval(interval);
+    interval = setInterval(() => {
+      seconds++;
+      const h = Math.floor(seconds / 3600);
+      const m = Math.floor((seconds % 3600) / 60);
+      const s = seconds % 60;
+      document.getElementById('display').textContent = 
+        [h, m, s].map(v => v.toString().padStart(2, '0')).join(':');
+    }, 1000);
+    alert('⏰ Cronômetro iniciado!');
+  };
+  
+  window.pauseCounting = function() {
+    if (interval) {
+      clearInterval(interval);
+      interval = null;
+      alert('⏸️ Cronômetro pausado!');
+    }
+  };
+  
+  window.closeTimer = function() {
+    if (interval) clearInterval(interval);
+    const modal = document.querySelector('[style*="position: fixed"]');
+    if (modal) modal.remove();
+    alert(`⏱️ Tempo registrado: ${Math.floor(seconds/3600)}h ${Math.floor((seconds%3600)/60)}m ${seconds%60}s`);
+    seconds = 0;
+  };
+  
+  console.log('=== TODAS AS FUNÇÕES CRIADAS ===');
+  console.log('testFunction:', typeof window.testFunction);
+  console.log('showTimerModal:', typeof window.showTimerModal);
+  
+  // Variáveis do cronômetro originais
+  let timerInterval;
+  let timerSeconds = 0;
+  let isRunning = false;
+  let startTime = null;
+
+  function updateProgress(value) {
+    fetch(`/api/task/{{ task.id }}/progress`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ progress: parseInt(value) }),
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        if (data.success) {
+          document.getElementById("progressBar").style.width = value + "%";
+          showToast("Progresso atualizado!", "success");
+
+          // Recarregar página se status mudou automaticamente
+          setTimeout(() => location.reload(), 1000);
+        } else {
+          showToast("Erro ao atualizar progresso", "error");
+        }
+      })
+      .catch((error) => showToast("Erro de conexão", "error"));
+  }
+
+  function updateStatus(status) {
+    fetch(`/api/task/{{ task.id }}/status`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ status: status }),
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        if (data.success) {
+          showToast("Status atualizado!", "success");
+          setTimeout(() => location.reload(), 1000);
+        } else {
+          showToast("Erro ao atualizar status", "error");
+        }
+      })
+      .catch((error) => showToast("Erro de conexão", "error"));
+  }
+
+  function startTimer() {
+    console.log('=== FUNÇÃO STARTTIMER CHAMADA ===');
+    
+    // Primeiro teste: apenas alert
+    alert('StartTimer foi executado!');
+    
+    // Segundo teste: log no console
+    console.log('Teste console log funcionando');
+    
+    // Terceiro teste: mudança visual
+    const btn = document.getElementById('startTimerBtn');
+    if (btn) {
+      btn.innerHTML = '<i class="bi bi-check me-2"></i>Funcionou!';
+      btn.classList.remove('btn-outline-info');
+      btn.classList.add('btn-success');
+    }
+  }
+            showToast('Erro ao iniciar cronômetro', 'error');
+          });
+        }
+      });
+  }
+
+  function showTimerModal() {
+    const modal = new bootstrap.Modal(document.getElementById("timerModal"));
+    modal.show();
+    updateTimerDisplay();
+    updateTimerButtons();
+  }
+
+  function updateTimerDisplay() {
+    const hours = Math.floor(timerSeconds / 3600);
+    const minutes = Math.floor((timerSeconds % 3600) / 60);
+    const seconds = timerSeconds % 60;
+
+    const display = [hours, minutes, seconds]
+      .map((v) => v.toString().padStart(2, "0"))
+      .join(":");
+
+    document.getElementById("timerDisplay").textContent = display;
+  }
+
+  function updateTimerButtons() {
+    const startBtn = document.getElementById("startBtn");
+    const pauseBtn = document.getElementById("pauseBtn");
+    const stopBtn = document.getElementById("stopBtn");
+
+    if (isRunning) {
+      startBtn.style.display = "none";
+      pauseBtn.style.display = "inline-block";
+      stopBtn.disabled = false;
+    } else {
+      startBtn.style.display = "inline-block";
+      pauseBtn.style.display = "none";
+      stopBtn.disabled = false;
+    }
+  }
+
+  function startTimerCounting() {
+    if (!isRunning) {
+      isRunning = true;
+      updateTimerButtons();
+    }
+
+    if (timerInterval) {
+      clearInterval(timerInterval);
+    }
+
+    timerInterval = setInterval(() => {
+      timerSeconds++;
+      updateTimerDisplay();
+    }, 1000);
+  }
+
+  function pauseTimer() {
+    if (isRunning) {
+      isRunning = false;
+      clearInterval(timerInterval);
+      updateTimerButtons();
+    }
+  }
+
+  function resumeTimer() {
+    if (!isRunning) {
+      startTimerCounting();
+    }
+  }
+
+  function stopTimer() {
+    if (timerSeconds === 0) {
+      showToast('Nenhum tempo para registrar', 'warning');
+      return;
+    }
+
+    // Parar cronômetro no servidor
+    fetch(`/api/task/{{ task.id }}/timer/stop`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      }
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        isRunning = false;
+        clearInterval(timerInterval);
+        
+        showToast(data.message, 'success');
+        
+        // Fechar modal e recarregar página
+        const modal = bootstrap.Modal.getInstance(document.getElementById("timerModal"));
+        if (modal) {
+          modal.hide();
+        }
+        
+        setTimeout(() => location.reload(), 1500);
+      } else {
+        showToast(data.message, 'error');
+      }
+    })
+    .catch(error => {
+      console.error('Erro:', error);
+      showToast('Erro ao parar cronômetro', 'error');
+    });
+  }
+
+  function resetTimer() {
+    isRunning = false;
+    clearInterval(timerInterval);
+    timerSeconds = 0;
+    startTime = null;
+    updateTimerDisplay();
+    updateTimerButtons();
+  }
+
+  function updateProgress(value) {
+    fetch(`/api/task/{{ task.id }}/progress`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ progress: parseInt(value) }),
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        if (data.success) {
+          document.getElementById("progressBar").style.width = value + "%";
+          showToast("Progresso atualizado!", "success");
+
+          // Recarregar página se status mudou automaticamente
+          setTimeout(() => location.reload(), 1000);
+        } else {
+          showToast("Erro ao atualizar progresso", "error");
+        }
+      })
+      .catch((error) => {
+        console.error("Erro:", error);
+        showToast("Erro ao atualizar progresso", "error");
+      });
+  }
+
+  function updateStatus(status) {
+    fetch(`/api/tasks/{{ task.id }}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ status: status }),
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        if (data.success) {
+          showToast("Status atualizado!", "success");
+          setTimeout(() => location.reload(), 1000);
+        } else {
+          showToast("Erro ao atualizar status", "error");
+        }
+      })
+      .catch((error) => {
+        console.error("Erro:", error);
+        showToast("Erro ao atualizar status", "error");
+      });
+  }
+
+  function confirmDelete() {
+    const modal = new bootstrap.Modal(document.getElementById("deleteModal"));
+    modal.show();
+  }
+
+  function duplicateTask() {
+    if (confirm("Deseja duplicar esta tarefa?")) {
+      // Implementar duplicação via API
+      showToast("Funcionalidade em desenvolvimento", "info");
+    }
+  }
+
+  function showToast(message, type = 'info') {
+    // Criar toast temporário se não existir container
+    let toastContainer = document.querySelector(".toast-container");
+    if (!toastContainer) {
+      toastContainer = document.createElement("div");
+      toastContainer.className = "toast-container position-fixed top-0 end-0 p-3";
+      document.body.appendChild(toastContainer);
+    }
+
+    const toast = document.createElement("div");
+    toast.className = `toast align-items-center text-bg-${type} border-0`;
+    toast.setAttribute("role", "alert");
+    toast.innerHTML = `
+        <div class="d-flex">
+            <div class="toast-body">${message}</div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+        </div>
+    `;
+
+    toastContainer.appendChild(toast);
+    const bsToast = new bootstrap.Toast(toast);
+    bsToast.show();
+
+    // Remover após 5 segundos
+    setTimeout(() => toast.remove(), 5000);
+  }
+
+  function addTimeEntry() {
+    const hours = parseFloat(document.getElementById("timeHours").value);
+    const description = document.getElementById("timeDescription").value;
+
+    if (hours && hours > 0) {
+      fetch(`/api/task/{{ task.id }}/add_time`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          hours: hours,
+          description: description,
+        }),
+      })
+        .then((response) => response.json())
+        .then((data) => {
+          if (data.success) {
+            showToast(data.message, "success");
+            document.getElementById("timeHours").value = "";
+            document.getElementById("timeDescription").value = "";
+            setTimeout(() => location.reload(), 1000);
+          } else {
+            showToast(data.message, "error");
+          }
+        })
+        .catch((error) => {
+          console.error("Erro:", error);
+          showToast("Erro ao adicionar tempo", "error");
+        });
+    } else {
+      showToast("Digite um valor válido de horas", "warning");
+    }
+  }
+
+  // Verificar se há timer ativo ao carregar a página
+  document.addEventListener('DOMContentLoaded', function() {
+    console.log('Verificando timer ativo ao carregar página...');
+    
+    fetch(`/api/task/{{ task.id }}/timer/status`)
+      .then(response => response.json())
+      .then(data => {
+        console.log('Timer status na inicialização:', data);
+        
+        if (data.active) {
+          // Atualizar botão para indicar timer ativo
+          const timerBtn = document.querySelector('[onclick="startTimer()"]');
+          if (timerBtn) {
+            timerBtn.innerHTML = '<i class="bi bi-stopwatch-fill me-2"></i>Timer Ativo';
+            timerBtn.classList.remove('btn-outline-secondary');
+            timerBtn.classList.add('btn-warning');
+            console.log('Botão atualizado para mostrar timer ativo');
+          }
+        } else {
+          console.log('Nenhum timer ativo');
+        }
+      })
+      .catch(error => {
+        console.error('Erro ao verificar timer na inicialização:', error);
+      });
+
+    // Inicializar timer display
+    updateTimerDisplay();
+
+    // Auto-focus no campo de comentário
+    const commentField = document.querySelector('textarea[name="content"]');
+    if (commentField) {
+      commentField.focus();
+    }
+    
+    console.log('Inicialização concluída');
+  });
+</script>
+{% endblock %}

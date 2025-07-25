@@ -1,0 +1,434 @@
+{% extends "base_simple.html" %}
+
+{% block title %}
+{% if task %}Editar Tarefa{% else %}Nova Tarefa{% endif %} - Gerenciador de Demandas
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8 offset-lg-2">
+        <div class="card">
+            <div class="card-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="bi {% if task %}bi-pencil{% else %}bi-plus-circle{% endif %} me-2"></i>
+                        {% if task %}Editar Tarefa{% else %}Nova Tarefa{% endif %}
+                    </h5>
+                    <a href="{% if task %}{{ url_for('task_detail', task_id=task.id) }}{% else %}{{ url_for('dashboard') }}{% endif %}" 
+                       class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left me-2"></i>Voltar
+                    </a>
+                </div>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <div class="row">
+                        <!-- Título -->
+                        <div class="col-md-8 mb-3">
+                            <label for="title" class="form-label">Título *</label>
+                            <input type="text" 
+                                   class="form-control" 
+                                   id="title" 
+                                   name="title" 
+                                   value="{{ task.title if task else '' }}"
+                                   required>
+                        </div>
+                        
+                        <!-- Cor -->
+                        <div class="col-md-4 mb-3">
+                            <label for="color" class="form-label">Cor</label>
+                            <input type="color" 
+                                   class="form-control form-control-color" 
+                                   id="color" 
+                                   name="color" 
+                                   value="{{ task.color if task else '#007bff' }}">
+                        </div>
+                    </div>
+
+                    <!-- Descrição -->
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Descrição</label>
+                        <textarea class="form-control" 
+                                  id="description" 
+                                  name="description" 
+                                  rows="4"
+                                  placeholder="Descreva detalhadamente a tarefa...">{{ task.description if task else '' }}</textarea>
+                    </div>
+
+                    <div class="row">
+                        <!-- Status -->
+                        <div class="col-md-3 mb-3">
+                            <label for="status" class="form-label">Status</label>
+                            <select class="form-select" id="status" name="status">
+                                <option value="pendente" {{ 'selected' if task and task.status == 'pendente' else '' }}>Pendente</option>
+                                <option value="andamento" {{ 'selected' if task and task.status == 'andamento' else '' }}>Em Andamento</option>
+                                <option value="concluido" {{ 'selected' if task and task.status == 'concluido' else '' }}>Concluído</option>
+                            </select>
+                        </div>
+
+                        <!-- Prioridade -->
+                        <div class="col-md-3 mb-3">
+                            <label for="priority" class="form-label">Prioridade</label>
+                            <select class="form-select" id="priority" name="priority">
+                                <option value="baixa" {{ 'selected' if task and task.priority == 'baixa' else '' }}>Baixa</option>
+                                <option value="media" {{ 'selected' if task and task.priority == 'media' else '' }}>Média</option>
+                                <option value="alta" {{ 'selected' if task and task.priority == 'alta' else '' }}>Alta</option>
+                                <option value="critico" {{ 'selected' if task and task.priority == 'critico' else '' }}>Crítica</option>
+                            </select>
+                        </div>
+
+                        <!-- Categoria -->
+                        <div class="col-md-3 mb-3">
+                            <label for="category" class="form-label">Categoria</label>
+                            <input type="text" 
+                                   class="form-control" 
+                                   id="category" 
+                                   name="category" 
+                                   value="{{ task.category if task else 'geral' }}"
+                                   list="categoriesList">
+                            <datalist id="categoriesList">
+                                {% for cat in categories %}
+                                <option value="{{ cat }}">
+                                {% endfor %}
+                                <option value="desenvolvimento">
+                                <option value="design">
+                                <option value="marketing">
+                                <option value="suporte">
+                                <option value="vendas">
+                            </datalist>
+                        </div>
+
+                        <!-- Progresso -->
+                        <div class="col-md-3 mb-3">
+                            <label for="progress" class="form-label">Progresso (%)</label>
+                            <input type="range" 
+                                   class="form-range" 
+                                   id="progress" 
+                                   name="progress" 
+                                   min="0" 
+                                   max="100" 
+                                   value="{{ task.progress if task else 0 }}"
+                                   oninput="updateProgressValue(this.value)">
+                            <div class="text-center mt-1">
+                                <span id="progressValue" class="badge bg-primary">{{ task.progress if task else 0 }}%</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <!-- Data de Vencimento -->
+                        <div class="col-md-4 mb-3">
+                            <label for="due_date" class="form-label">Data de Vencimento</label>
+                            <input type="datetime-local" 
+                                   class="form-control" 
+                                   id="due_date" 
+                                   name="due_date"
+                                   value="{% if task and task.due_date %}{{ task.due_date.strftime('%Y-%m-%dT%H:%M') }}{% endif %}">
+                        </div>
+
+                        <!-- Horas Estimadas -->
+                        <div class="col-md-3 mb-3">
+                            <label for="estimated_hours" class="form-label">Horas Estimadas</label>
+                            <input type="number" 
+                                   class="form-control" 
+                                   id="estimated_hours" 
+                                   name="estimated_hours" 
+                                   min="0" 
+                                   step="0.5"
+                                   value="{{ task.estimated_hours if task else 0 }}">
+                        </div>
+
+                        <!-- Horas Trabalhadas -->
+                        <div class="col-md-3 mb-3">
+                            <label for="actual_hours" class="form-label">Horas Trabalhadas</label>
+                            <div class="input-group">
+                                <input type="number" 
+                                       class="form-control" 
+                                       id="actual_hours" 
+                                       name="actual_hours" 
+                                       min="0" 
+                                       step="0.1"
+                                       value="{{ task.actual_hours if task else 0 }}">
+                                <button class="btn btn-outline-primary" type="button" id="timerToggle" onclick="toggleTimer()">
+                                    <i class="bi bi-play-fill" id="timerIcon"></i>
+                                </button>
+                            </div>
+                            <small class="text-muted">Cronômetro: <span id="timerDisplay">00:00:00</span></small>
+                        </div>
+
+                        <!-- Categoria -->
+                        <div class="col-md-2 mb-3">
+                            <label for="category" class="form-label">Categoria</label>
+                            <input type="text" 
+                                   class="form-control" 
+                                   id="category" 
+                                   name="category" 
+                                   value="{{ task.category if task else 'geral' }}"
+                                   list="categoryList">
+                            <datalist id="categoryList">
+                                <option value="geral">
+                                <option value="desenvolvimento">
+                                <option value="design">
+                                <option value="marketing">
+                                <option value="suporte">
+                                <option value="vendas">
+                            </datalist>
+                        </div>
+
+                        <!-- Responsável -->
+                        {% if users %}
+                        <div class="col-md-4 mb-3">
+                            <label for="assignee_id" class="form-label">Responsável</label>
+                            <select class="form-select" id="assignee_id" name="assignee_id">
+                                <option value="">Não atribuído</option>
+                                {% for user in users %}
+                                <option value="{{ user.id }}" 
+                                        {{ 'selected' if task and task.assignee_id == user.id else '' }}>
+                                    {{ user.get_full_name() }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Tags -->
+                    <div class="mb-3">
+                        <label for="tags" class="form-label">Tags</label>
+                        <input type="text" 
+                               class="form-control" 
+                               id="tags" 
+                               name="tags" 
+                               value="{% if task %}{{ task.get_tags_list()|join(', ') }}{% endif %}"
+                               placeholder="tag1, tag2, tag3...">
+                        <div class="form-text">Separe as tags com vírgulas</div>
+                    </div>
+
+                    <!-- Ações -->
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            {% if task %}
+                            <button type="button" class="btn btn-outline-danger" onclick="confirmDelete()">
+                                <i class="bi bi-trash me-2"></i>Excluir Tarefa
+                            </button>
+                            {% endif %}
+                        </div>
+                        <div>
+                            <a href="{% if task %}{{ url_for('task_detail', task_id=task.id) }}{% else %}{{ url_for('dashboard') }}{% endif %}" 
+                               class="btn btn-outline-secondary me-2">Cancelar</a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi {% if task %}bi-check2{% else %}bi-plus-lg{% endif %} me-2"></i>
+                                {% if task %}Atualizar{% else %}Criar{% endif %} Tarefa
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de confirmação de exclusão -->
+{% if task %}
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirmar Exclusão</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Tem certeza que deseja excluir a tarefa <strong>"{{ task.title }}"</strong>?</p>
+                <p class="text-muted">Esta ação não pode ser desfeita.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <form method="POST" action="{{ url_for('delete_task', task_id=task.id) }}" style="display: inline;">
+                    <button type="submit" class="btn btn-danger">
+                        <i class="bi bi-trash me-2"></i>Excluir
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Variáveis do cronômetro
+    let timerInterval = null;
+    let startTime = 0;
+    let elapsedTime = 0;
+    let isRunning = false;
+
+    function updateProgressValue(value) {
+        document.getElementById('progressValue').textContent = value + '%';
+        
+        // Auto-atualizar status baseado no progresso
+        const statusSelect = document.getElementById('status');
+        if (value == 100 && statusSelect.value !== 'concluido') {
+            statusSelect.value = 'concluido';
+            showToast('Status automaticamente definido como "Concluído"', 'info');
+        } else if (value < 100 && statusSelect.value === 'concluido') {
+            statusSelect.value = 'andamento';
+            showToast('Status automaticamente definido como "Em Andamento"', 'info');
+        }
+    }
+
+    function toggleTimer() {
+        const timerIcon = document.getElementById('timerIcon');
+        const timerDisplay = document.getElementById('timerDisplay');
+        const timerButton = document.getElementById('timerToggle');
+        
+        if (!isRunning) {
+            // Iniciar cronômetro
+            startTime = Date.now() - elapsedTime;
+            timerInterval = setInterval(updateTimer, 100);
+            timerIcon.className = 'bi bi-pause-fill';
+            timerButton.className = 'btn btn-outline-danger';
+            isRunning = true;
+        } else {
+            // Parar cronômetro
+            clearInterval(timerInterval);
+            timerIcon.className = 'bi bi-play-fill';
+            timerButton.className = 'btn btn-outline-primary';
+            isRunning = false;
+            // Adicionar tempo às horas trabalhadas
+            const actualHoursInput = document.getElementById('actual_hours');
+            const currentHours = parseFloat(actualHoursInput.value) || 0;
+            const hoursToAdd = elapsedTime / (1000 * 60 * 60); // Converter ms para horas
+            if (hoursToAdd > 0.0001) {
+                // Se for tarefa existente, salva no backend
+                const taskId = window.location.pathname.match(/task\/(\d+)/) ? window.location.pathname.match(/task\/(\d+)/)[1] : null;
+                if (taskId) {
+                    fetch(`/api/task/${taskId}/add_time`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ hours: hoursToAdd })
+                    })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.success) {
+                            actualHoursInput.value = data.actual_hours.toFixed(2);
+                            showToast('Tempo salvo automaticamente!', 'success');
+                        } else {
+                            showToast('Erro ao salvar tempo!', 'error');
+                        }
+                    })
+                    .catch(() => showToast('Erro ao salvar tempo!', 'error'));
+                } else {
+                    // Tarefa nova: só atualiza o campo
+                    actualHoursInput.value = (currentHours + hoursToAdd).toFixed(2);
+                }
+            }
+            // Resetar cronômetro visual
+            elapsedTime = 0;
+            timerDisplay.textContent = '00:00:00';
+        }
+    }
+
+    function updateTimer() {
+        elapsedTime = Date.now() - startTime;
+        const hours = Math.floor(elapsedTime / (1000 * 60 * 60));
+        const minutes = Math.floor((elapsedTime % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((elapsedTime % (1000 * 60)) / 1000);
+        
+        document.getElementById('timerDisplay').textContent = 
+            `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    }
+
+    function confirmDelete() {
+        const modal = new bootstrap.Modal(document.getElementById('deleteModal'));
+        modal.show();
+    }
+
+    // Auto-salvar rascunho (localStorage)
+    function saveDraft() {
+        if (!{{ 'true' if task else 'false' }}) { // Apenas para novas tarefas
+            const formData = {
+                title: document.getElementById('title').value,
+                description: document.getElementById('description').value,
+                priority: document.getElementById('priority').value,
+                category: document.getElementById('category').value,
+                due_date: document.getElementById('due_date').value,
+                estimated_hours: document.getElementById('estimated_hours').value,
+                tags: document.getElementById('tags').value
+            };
+            localStorage.setItem('taskDraft', JSON.stringify(formData));
+        }
+    }
+
+    function loadDraft() {
+        if (!{{ 'true' if task else 'false' }}) { // Apenas para novas tarefas
+            const draft = localStorage.getItem('taskDraft');
+            if (draft) {
+                const formData = JSON.parse(draft);
+                Object.keys(formData).forEach(key => {
+                    const element = document.getElementById(key);
+                    if (element && formData[key]) {
+                        element.value = formData[key];
+                    }
+                });
+                
+                if (confirm('Rascunho encontrado! Deseja carregar os dados salvos?')) {
+                    // Dados já foram carregados acima
+                    showToast('Rascunho carregado com sucesso!', 'info');
+                } else {
+                    localStorage.removeItem('taskDraft');
+                }
+            }
+        }
+    }
+
+    function clearDraft() {
+        localStorage.removeItem('taskDraft');
+    }
+
+    // Auto-salvar a cada 30 segundos
+    setInterval(saveDraft, 30000);
+
+    // Carregar rascunho ao carregar a página
+    document.addEventListener('DOMContentLoaded', loadDraft);
+
+    // Limpar rascunho ao enviar formulário
+    document.querySelector('form').addEventListener('submit', clearDraft);
+
+    // Validação em tempo real
+    document.getElementById('title').addEventListener('input', function() {
+        const value = this.value.trim();
+        if (value.length < 3) {
+            this.setCustomValidity('O título deve ter pelo menos 3 caracteres');
+        } else if (value.length > 200) {
+            this.setCustomValidity('O título não pode ter mais de 200 caracteres');
+        } else {
+            this.setCustomValidity('');
+        }
+    });
+
+    // Preview da cor
+    document.getElementById('color').addEventListener('change', function() {
+        const color = this.value;
+        const preview = document.querySelector('.card-header');
+        preview.style.borderLeft = `4px solid ${color}`;
+    });
+
+    // Sugestões de tags
+    const commonTags = ['urgente', 'bug', 'feature', 'melhoria', 'documentação', 'teste', 'deploy'];
+    const tagsInput = document.getElementById('tags');
+    
+    tagsInput.addEventListener('input', function() {
+        const value = this.value.toLowerCase();
+        const lastTag = value.split(',').pop().trim();
+        
+        if (lastTag.length >= 2) {
+            const suggestions = commonTags.filter(tag => 
+                tag.toLowerCase().includes(lastTag) && !value.includes(tag)
+            );
+            
+            // Implementar dropdown de sugestões se necessário
+        }
+    });
+</script>
+{% endblock %}
